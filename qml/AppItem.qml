@@ -20,12 +20,14 @@
 import QtQuick 2.12
 import QtQuick.Controls 2.12
 import Cutefish.Dock 1.0
+import Cutefish.Shell 1.0
 import FishUI 1.0 as FishUI
 
 DockItem {
     id: appItem
 
     property var windowCount: model.windowCount
+    property var windowIds: model.windowIds
     property var dragSource: null
 
     iconName: model.iconName ? model.iconName : "application-x-desktop"
@@ -35,33 +37,74 @@ DockItem {
     draggable: !model.fixed
     dragItemIndex: index
 
-    onXChanged: {
-        if (windowCount > 0)
-            updateGeometry()
-    }
-
-    onYChanged: {
-        if (windowCount > 0)
-            updateGeometry()
+    function updateMinimizedGeometry() {
+        minimizedGeometryTimer.restart()
     }
 
     onWindowCountChanged: {
         if (windowCount > 0)
-            updateGeometry()
+            stopBounce()
+        updateMinimizedGeometry()
     }
 
-    onPositionChanged: updateGeometry()
-    onPressed: updateGeometry()
-    onRightClicked: if (model.appId !== "cutefish-launcher") contextMenu.show()
+    onWindowIdsChanged: updateMinimizedGeometry()
 
-    onClicked: {
-        if (mouse.button === Qt.LeftButton)
+    Component.onCompleted: updateMinimizedGeometry()
+
+    Connections {
+        target: icon
+
+        function onXChanged() {
+            appItem.updateMinimizedGeometry()
+        }
+
+        function onYChanged() {
+            appItem.updateMinimizedGeometry()
+        }
+
+        function onWidthChanged() {
+            appItem.updateMinimizedGeometry()
+        }
+
+        function onHeightChanged() {
+            appItem.updateMinimizedGeometry()
+        }
+    }
+
+    Connections {
+        target: dock
+
+        function onMinimizedGeometrySurfaceChanged() {
+            appItem.updateMinimizedGeometry()
+        }
+    }
+
+    Timer {
+        id: minimizedGeometryTimer
+        interval: 0
+        repeat: false
+        onTriggered: dock.updateIconGeometry(icon, windowIds)
+    }
+
+    onRightClicked: {
+        if (model.appId !== "cutefish-launcher")
+            popupMenu(contextMenu)
+    }
+
+    onClicked: function(mouse) {
+        if (mouse.button === Qt.LeftButton) {
+            if (windowCount === 0 && model.appId !== "cutefish-launcher")
+                startBounce()
             appModel.clicked(model.appId)
-        else if (mouse.button === Qt.MiddleButton)
-            appModel.openNewInstance(model.appId)
+        } else if (mouse.button === Qt.MiddleButton) {
+            if (model.appId !== "cutefish-launcher") {
+                startBounce()
+                appModel.openNewInstance(model.appId)
+            }
+        }
     }
 
-    dropArea.onEntered: {
+    dropArea.onEntered: function(drag) {
         appItem.dragSource = drag.source
         dropTimer.restart()
     }
@@ -73,7 +116,6 @@ DockItem {
 
     dropArea.onDropped: {
         appModel.save()
-        updateGeometry()
     }
 
     Timer {
@@ -90,17 +132,24 @@ DockItem {
 
     FishUI.DesktopMenu {
         id: contextMenu
+        blurEnabled: FishUI.Theme.blurEnabled
 
         MenuItem {
             text: qsTr("Open")
             visible: windowCount === 0
-            onTriggered: appModel.openNewInstance(model.appId)
+            onTriggered: {
+                startBounce()
+                appModel.openNewInstance(model.appId)
+            }
         }
 
         MenuItem {
             text: model.visibleName
             visible: windowCount > 0 && model.visibleName
-            onTriggered: appModel.openNewInstance(model.appId)
+            onTriggered: {
+                startBounce()
+                appModel.openNewInstance(model.appId)
+            }
         }
 
         MenuItem {
@@ -113,19 +162,8 @@ DockItem {
 
         MenuItem {
             visible: windowCount !== 0
-            text: windowCount === 1 ? qsTr("Close window")
-                                    : qsTr("Close %1 windows").arg(windowCount)
-            onTriggered: appModel.closeAllByAppId(model.appId)
+            text: qsTr("Quit")
+            onTriggered: appModel.quit(model.appId)
         }
-    }
-
-
-    function updateGeometry() {
-        if (model.fixed)
-            return
-
-        appModel.updateGeometries(model.appId, Qt.rect(appItem.mapToGlobal(0, 0).x,
-                                                       appItem.mapToGlobal(0, 0).y,
-                                                       appItem.width, appItem.height))
     }
 }

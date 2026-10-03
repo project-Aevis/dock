@@ -23,18 +23,52 @@ import QtQuick.Layouts 1.12
 import Qt5Compat.GraphicalEffects
 
 import Cutefish.Dock 1.0
+import Cutefish.Shell 1.0
 import FishUI 1.0 as FishUI
 
 Item {
     id: root
     visible: true
 
+    property bool isLeft: Settings.direction === DockSettings.Left
+    property bool isRight: Settings.direction === DockSettings.Right
     property bool isHorizontal: Settings.direction === DockSettings.Bottom
-    property real windowRadius: isHorizontal ? root.height * 0.3 : root.width * 0.3
-    property bool compositing: windowHelper.compositing
 
-    onCompositingChanged: {
-        mainWindow.updateSize()
+    // Geometry shared with Dock, see src/dockmetrics.h. The dock is a
+    // row (or column) of icons with padding at both ends, and the running dot
+    // lives between the icons and the screen edge.
+    property var metrics: dock.metrics
+    property int iconGap: metrics.iconGap
+    property int lengthPadding: metrics.lengthPadding
+    property int outerPadding: metrics.outerPadding
+    property int activeDotGap: metrics.dotGap
+    property int activeDotSize: metrics.dotSize
+    property int edgePadding: metrics.edgePadding
+    property int dotAreaSize: edgePadding + activeDotSize + activeDotGap
+    property int thickness: isHorizontal ? root.height : root.width
+    property real windowRadius: thickness * 28 / 86
+    property real iconSizeRatio: 1.0
+    property int itemSize: Math.max(1, thickness - root.dotAreaSize - root.outerPadding)
+
+    property real hoverPos: -1
+    property bool isHovered: false
+    property real maxMagnification: 1.40
+    property real magnificationSpread: root.itemSize * 2.3
+    property int dividerSlotWidth: 14
+
+    ScreenHelper {
+        id: _screenHelper
+    }
+
+    // Item positions come out in surface coordinates: a plasma-shell panel is
+    // reported at (0, 0) on Wayland. A menu clamps its position against this
+    // rectangle, so hand it the work area in that same space.
+    function menuAvailableGeometry() {
+        var origin = root.mapToGlobal(0, 0)
+        var rect = _screenHelper.availableScreenRect
+        return Qt.rect(rect.x + origin.x - dock.surfacePosition.x,
+                       rect.y + origin.y - dock.surfacePosition.y,
+                       rect.width, rect.height)
     }
 
     DropArea {
@@ -42,79 +76,186 @@ Item {
         enabled: true
     }
 
-    // Background
+    // macOS Pre-Liquid Glass Frosted Dock Pill (Big Sur / Monterey / Ventura / Sonoma)
     Rectangle {
         id: _background
 
-        property var borderColor: root.compositing ? FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.3)
-                                                                           : Qt.rgba(0, 0, 0, 0.2) : FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.15)
-                                                                                                                           : Qt.rgba(0, 0, 0, 0.15)
-
         anchors.fill: parent
-        radius: root.compositing && Settings.style === 0 ? windowRadius : 0
-        color: FishUI.Theme.darkMode ? "#666666" : "#E6E6E6"
-        opacity: root.compositing ? FishUI.Theme.darkMode ? 0.5 : 0.5 : 0.9
-        border.width: 1 / FishUI.Units.devicePixelRatio
-        border.pixelAligned: FishUI.Units.devicePixelRatio > 1 ? false : true
-        border.color: borderColor
+        radius: root.windowRadius
 
-        Behavior on color {
-            ColorAnimation {
-                duration: 200
-                easing.type: Easing.Linear
+        // Uniform frosted glass material with vertical specular gradient
+        gradient: Gradient {
+            GradientStop {
+                position: 0.0
+                color: FishUI.Theme.darkMode ? Qt.rgba(0.20, 0.20, 0.24, 0.70)
+                                             : Qt.rgba(1.0, 1.0, 1.0, 0.82)
             }
+            GradientStop {
+                position: 1.0
+                color: FishUI.Theme.darkMode ? Qt.rgba(0.10, 0.10, 0.12, 0.58)
+                                             : Qt.rgba(0.92, 0.92, 0.95, 0.65)
+            }
+        }
+        opacity: FishUI.Theme.blurEnabled ? 0.96 : 1.0
+
+        // Outer contrast rim
+        border.width: 1 / FishUI.Dpi.ratio
+        border.pixelAligned: FishUI.Dpi.ratio > 1 ? false : true
+        border.color: FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.16)
+                                            : Qt.rgba(0, 0, 0, 0.14)
+
+        // Inner delicate light edge
+        Rectangle {
+            id: innerHighlight
+            anchors.fill: parent
+            anchors.margins: 1 / FishUI.Dpi.ratio
+            radius: Math.max(0, parent.radius - 1)
+            color: "transparent"
+            border.width: 1 / FishUI.Dpi.ratio
+            border.color: FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.12)
+                                                : Qt.rgba(255, 255, 255, 0.85)
         }
     }
 
-    FishUI.WindowHelper {
-        id: windowHelper
-    }
-
     FishUI.WindowShadow {
-        view: mainWindow
-        geometry: Qt.rect(root.x, root.y, root.width, root.height)
-        strength: 1
-        radius: _background.radius
+        view: dock
+        strength: 0.8
+        radius: _background.radius + 6
     }
 
     FishUI.WindowBlur {
-        view: mainWindow
-        geometry: Qt.rect(root.x, root.y, root.width, root.height)
+        view: dock
         windowRadius: _background.radius
-        enabled: true
+        enabled: FishUI.Theme.blurEnabled
     }
 
+    // macOS Style Frosted Dark Tooltip
     FishUI.PopupTips {
         id: popupTips
-        backgroundColor: _background.color
-        blurEnabled: false
+        backgroundColor: FishUI.Theme.darkMode ? Qt.rgba(0.12, 0.12, 0.14, 0.90)
+                                               : Qt.rgba(0.18, 0.18, 0.22, 0.90)
+        borderColor: Qt.rgba(255, 255, 255, 0.20)
+        blurEnabled: true
+    }
+
+    // Non-blocking hover tracker for continuous magnification wave across dock
+    MouseArea {
+        id: backgroundHoverArea
+        anchors.fill: parent
+        hoverEnabled: true
+        acceptedButtons: Qt.NoButton
+        onPositionChanged: function(mouse) {
+            var p = mapToItem(mainLayout, mouse.x, mouse.y)
+            root.hoverPos = root.isHorizontal ? p.x : p.y
+            root.isHovered = true
+            hoverResetTimer.restart()
+        }
+        onExited: {
+            hoverResetTimer.restart()
+        }
+    }
+
+    Timer {
+        id: hoverResetTimer
+        interval: 90
+        repeat: false
+        onTriggered: {
+            root.isHovered = false
+            root.hoverPos = -1
+        }
     }
 
     GridLayout {
         id: mainLayout
         anchors.fill: parent
-        anchors.topMargin: Settings.style === 1
-                           && (Settings.direction === 0 || Settings.direction === 2)
-                           ? 28 : 0
+        // The dot area is always on the side that faces the screen edge.
+        anchors.leftMargin: isHorizontal ? root.lengthPadding
+                                         : isLeft ? root.dotAreaSize : root.outerPadding
+        anchors.rightMargin: isHorizontal ? root.lengthPadding
+                                          : isRight ? root.dotAreaSize : root.outerPadding
+        anchors.topMargin: isHorizontal ? root.outerPadding : root.lengthPadding
+        anchors.bottomMargin: isHorizontal ? root.dotAreaSize : root.lengthPadding
         flow: isHorizontal ? Grid.LeftToRight : Grid.TopToBottom
-        columnSpacing: 0
-        rowSpacing: 0
+        columnSpacing: isHorizontal ? root.iconGap : 0
+        rowSpacing: isHorizontal ? 0 : root.iconGap
 
         ListView {
             id: appItemView
             orientation: isHorizontal ? Qt.Horizontal : Qt.Vertical
+            spacing: root.iconGap
             snapMode: ListView.SnapToItem
             interactive: false
             model: appModel
-            clip: true
+            clip: false
 
             Layout.fillHeight: true
             Layout.fillWidth: true
+            Layout.preferredWidth: root.isHorizontal
+                                  ? Math.max(0, root.width - 2 * root.lengthPadding
+                                             - root.iconGap - root.itemSize - root.dividerSlotWidth)
+                                  : -1
+            Layout.preferredHeight: root.isHorizontal
+                                   ? -1
+                                   : Math.max(0, root.height - 2 * root.lengthPadding
+                                              - root.iconGap - root.itemSize - root.dividerSlotWidth)
 
             delegate: AppItem {
                 id: appItemDelegate
-                implicitWidth: isHorizontal ? appItemView.height : appItemView.width
-                implicitHeight: isHorizontal ? appItemView.height : appItemView.width
+                property bool shouldAnimateOnAdd: dock.geometryAnimationAdding
+                                                 && model.animationToken === dock.geometryAnimationToken
+                property real addProgress: shouldAnimateOnAdd
+                                          ? dock.geometryAnimationProgress : 1.0
+                property real layoutProgress: addProgress
+                property real layoutWidth: root.itemSize * layoutProgress
+                property real layoutHeight: root.itemSize * layoutProgress
+
+                width: root.isHorizontal ? layoutWidth : root.itemSize
+                height: root.isHorizontal ? root.itemSize : layoutHeight
+                scale: addProgress
+                transformOrigin: Item.Center
+                opacity: addProgress
+                iconSizeRatio: root.iconSizeRatio
+            }
+
+            // Let the icon disappear into itself instead of vanishing when a
+            // window closes or an application is unpinned.
+            remove: Transition {
+                ParallelAnimation {
+                    NumberAnimation {
+                        property: "layoutProgress"
+                        to: 0.0
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                    NumberAnimation {
+                        property: "scale"
+                        to: 0.0
+                        duration: 180
+                        easing.type: Easing.InCubic
+                    }
+                    NumberAnimation {
+                        property: "opacity"
+                        to: 0.0
+                        duration: 140
+                        easing.type: Easing.InCubic
+                    }
+                }
+            }
+
+            addDisplaced: Transition {
+                NumberAnimation {
+                    properties: "x, y"
+                    duration: 180
+                    easing.type: Easing.OutCubic
+                }
+            }
+
+            removeDisplaced: Transition {
+                NumberAnimation {
+                    properties: "x, y"
+                    duration: 180
+                    easing.type: Easing.OutCubic
+                }
             }
 
             moveDisplaced: Transition {
@@ -126,19 +267,46 @@ Item {
             }
         }
 
+        // macOS Glass Divider
+        Item {
+            id: dockDivider
+            implicitWidth: root.isHorizontal ? root.dividerSlotWidth : root.itemSize
+            implicitHeight: root.isHorizontal ? root.itemSize : root.dividerSlotWidth
+            Layout.alignment: Qt.AlignCenter
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: root.isHorizontal ? 1 : parent.width * 0.58
+                height: root.isHorizontal ? parent.height * 0.58 : 1
+                radius: 0.5
+                color: FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.18)
+                                             : Qt.rgba(0, 0, 0, 0.18)
+
+                Rectangle {
+                    width: root.isHorizontal ? 1 : parent.width
+                    height: root.isHorizontal ? parent.height : 1
+                    x: root.isHorizontal ? 1 : 0
+                    y: root.isHorizontal ? 0 : 1
+                    color: FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.06)
+                                                 : Qt.rgba(255, 255, 255, 0.5)
+                }
+            }
+        }
+
         DockItem {
             id: trashItem
-            implicitWidth: isHorizontal ? root.height : root.width
-            implicitHeight: isHorizontal ? root.height : root.width
+            implicitWidth: root.itemSize
+            implicitHeight: root.itemSize
+            iconSizeRatio: root.iconSizeRatio
             popupText: qsTr("Trash")
             enableActivateDot: false
             iconName: trash.count === 0 ? "user-trash-empty" : "user-trash-full"
             onClicked: trash.openTrash()
-            onRightClicked: trashMenu.popup()
+            onRightClicked: popupMenu(trashMenu)
 
             dropArea.enabled: true
 
-            onDropped: {
+            onDropped: function(drop) {
                 if (drop.hasUrls) {
                     trash.moveToTrash(drop.urls)
                 }
@@ -147,22 +315,23 @@ Item {
             Rectangle {
                 anchors.fill: parent
                 anchors.margins: FishUI.Units.smallSpacing / 2
-                color: "transparent"
-                border.color: FishUI.Theme.textColor
-                radius: height * 0.3
-                border.width: 1 / FishUI.Units.devicePixelRatio
-                border.pixelAligned: FishUI.Units.devicePixelRatio > 1 ? false : true
-                opacity: trashItem.dropArea.containsDrag ? 0.5 : 0
+                color: FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.12)
+                                             : Qt.rgba(0, 0, 0, 0.08)
+                border.color: FishUI.Theme.highlightColor
+                radius: height * 0.28
+                border.width: 1.5
+                opacity: trashItem.dropArea.containsDrag ? 0.9 : 0
 
                 Behavior on opacity {
                     NumberAnimation {
-                        duration: 200
+                        duration: 180
                     }
                 }
             }
 
             FishUI.DesktopMenu {
                 id: trashMenu
+                blurEnabled: FishUI.Theme.blurEnabled
 
                 MenuItem {
                     text: qsTr("Open")
@@ -187,7 +356,7 @@ Item {
     }
 
     Connections {
-        target: mainWindow
+        target: dock
 
         function onVisibleChanged() {
             popupTips.hide()

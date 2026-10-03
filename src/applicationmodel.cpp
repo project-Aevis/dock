@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (C) 2021 CutefishOS Team.
  *
  * Author:     rekols <revenmartin@gmail.com>
@@ -22,6 +22,7 @@
 #include "utils.h"
 
 #include <QProcess>
+#include <utility>
 
 ApplicationModel::ApplicationModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -326,7 +327,7 @@ ApplicationItem *ApplicationModel::findItemByDesktop(const QString &desktop)
 
 bool ApplicationModel::contains(const QString &id)
 {
-    for (ApplicationItem *item : qAsConst(m_appItems)) {
+    for (ApplicationItem *item : std::as_const(m_appItems)) {
         if (item->id == id)
             return true;
     }
@@ -351,15 +352,6 @@ void ApplicationModel::initPinnedApplications()
     QSettings *set = (QFile(settings.fileName()).exists()) ? &settings
                                                            : &systemSettings;
     QStringList groups = set->childGroups();
-
-    // Launcher
-    ApplicationItem *item = new ApplicationItem;
-    item->id = "cutefish-launcher";
-    item->exec = "cutefish-launcher";
-    item->iconName = "qrc:/images/launcher.svg";
-    item->visibleName = tr("Launcher");
-    item->fixed = true;
-    m_appItems.append(item);
 
     // Pinned Apps
     for (int i = 0; i < groups.size(); ++i) {
@@ -411,6 +403,15 @@ void ApplicationModel::initPinnedApplications()
             }
         }
     }
+
+    // Launcher / Launchpad (Anchored on the right side)
+    ApplicationItem *item = new ApplicationItem;
+    item->id = "cutefish-launcher";
+    item->exec = "cutefish-launcher";
+    item->iconName = "qrc:/images/launchpad.svg";
+    item->visibleName = tr("Launchpad");
+    item->fixed = true;
+    m_appItems.append(item);
 }
 
 void ApplicationModel::savePinAndUnPinList()
@@ -502,7 +503,9 @@ void ApplicationModel::onWindowAdded(quint64 wid)
             item->desktopPath = desktopPath;
         }
 
-        m_appItems << item;
+        int launcherIndex = indexOf(QLatin1String("cutefish-launcher"));
+        int insertPos = (launcherIndex != -1) ? launcherIndex : rowCount();
+        m_appItems.insert(insertPos, item);
         endInsertRows();
 
         emit itemAdded();

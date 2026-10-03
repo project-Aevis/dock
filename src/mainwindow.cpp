@@ -60,6 +60,7 @@ MainWindow::MainWindow(QQuickView *parent)
     engine()->rootContext()->setContextProperty("process", new ProcessProvider);
     engine()->rootContext()->setContextProperty("Settings", m_settings);
     engine()->rootContext()->setContextProperty("mainWindow", this);
+    engine()->rootContext()->setContextProperty("dock", this);
     engine()->rootContext()->setContextProperty("trash", m_trashManager);
 
     setSource(QUrl(QStringLiteral("qrc:/qml/main.qml")));
@@ -67,6 +68,7 @@ MainWindow::MainWindow(QQuickView *parent)
     setResizeMode(QQuickView::SizeRootObjectToView);
     initScreens();
 
+    updateMetrics();
     initSlideWindow();
     resizeWindow();
     onVisibilityChanged();
@@ -159,75 +161,94 @@ void MainWindow::updateSize()
     resizeWindow();
 }
 
+void MainWindow::updateMetrics()
+{
+    QScreen *s = screen();
+    if (!s)
+        s = qGuiApp->primaryScreen();
+    if (!s)
+        return;
+
+    const bool isHorizontal = m_settings->direction() == DockSettings::Bottom;
+    const int itemCount = m_appModel->rowCount() + 1;
+    const int maxLength = (isHorizontal ? s->geometry().width()
+                                        : s->availableGeometry().height())
+            - m_settings->edgeMargins();
+
+    DockMetrics metrics = DockMetrics::forIconSize(m_settings->iconSize());
+
+    while (metrics.length(itemCount) > maxLength && metrics.iconSize > 1)
+        metrics = DockMetrics::forIconSize(metrics.iconSize - 1);
+
+    if (metrics == m_metrics)
+        return;
+
+    m_metrics = metrics;
+    emit metricsChanged();
+}
+
 QRect MainWindow::windowRect() const
 {
-    const QRect screenGeometry = screen()->geometry();
-    const QRect availableGeometry = screen()->availableGeometry();
+    QScreen *s = screen();
+    if (!s)
+        s = qGuiApp->primaryScreen();
+    if (!s)
+        return QRect();
 
-    bool isHorizontal = m_settings->direction() == DockSettings::Bottom;
-    bool compositing = false;
-    QQuickItem *item = qobject_cast<QQuickItem *>(rootObject());
+    const QRect screenGeometry = s->geometry();
+    const QRect availableGeometry = s->availableGeometry();
 
-    if (item) {
-        compositing = item->property("compositing").toBool();
-    }
+    const int itemCount = m_appModel->rowCount() + 1;
+    const int margins = m_settings->edgeMargins() / 2;
+    const int maxLength = (m_settings->direction() == DockSettings::Bottom)
+        ? (screenGeometry.width() - margins * 2)
+        : (availableGeometry.height() - margins * 2);
+    const int length = qMin(m_metrics.length(itemCount), maxLength);
+    const int thickness = m_metrics.thickness();
 
     QSize newSize(0, 0);
     QPoint position(0, 0);
-    int maxLength = isHorizontal ? screenGeometry.width() - m_settings->edgeMargins()
-                                 : availableGeometry.height() - m_settings->edgeMargins();;
-
-    // Add trash item.
-    int appCount = m_appModel->rowCount() + 1;
-    int iconSize = m_settings->iconSize();
-    iconSize += iconSize * 0.1;
-    int length = appCount * iconSize;
-    int margins = compositing ? DockSettings::self()->edgeMargins() / 2 : 0;
-
-    if (length >= maxLength) {
-        iconSize = (maxLength - (maxLength % appCount)) / appCount;
-        length = appCount * iconSize;
-    }
 
     switch (m_settings->style()) {
     case DockSettings::Round: {
         switch (m_settings->direction()) {
         case DockSettings::Left:
-            newSize = QSize(iconSize, length);
+            newSize = QSize(thickness, length);
             position.setX(screenGeometry.x() + margins);
-            // Handle the top statusbar.
-            position.setY(availableGeometry.y() + (availableGeometry.height() - newSize.height()) / 2);
+            position.setY(qMax(availableGeometry.y() + margins,
+                               availableGeometry.y() + (availableGeometry.height() - newSize.height()) / 2));
             break;
         case DockSettings::Bottom:
-            newSize = QSize(length, iconSize);
-            position.setX(screenGeometry.x() + (screenGeometry.width() - newSize.width()) / 2);
+            newSize = QSize(length, thickness);
+            position.setX(qMax(screenGeometry.x() + margins,
+                               screenGeometry.x() + (screenGeometry.width() - newSize.width()) / 2));
             position.setY(screenGeometry.y() + screenGeometry.height() - newSize.height() - margins);
             break;
         case DockSettings::Right:
-            newSize = QSize(iconSize, length);
+            newSize = QSize(thickness, length);
             position.setX(screenGeometry.x() + screenGeometry.width() - newSize.width() - margins);
-            position.setY(availableGeometry.y() + (availableGeometry.height() - newSize.height()) / 2);
+            position.setY(qMax(availableGeometry.y() + margins,
+                               availableGeometry.y() + (availableGeometry.height() - newSize.height()) / 2));
             break;
         default:
             break;
         }
-
         break;
     }
     case DockSettings::Straight: {
         switch (m_settings->direction()) {
         case DockSettings::Left:
-            newSize = QSize(iconSize, screenGeometry.height());
+            newSize = QSize(thickness, screenGeometry.height());
             position.setX(screenGeometry.x());
             position.setY(screenGeometry.y());
             break;
         case DockSettings::Bottom:
-            newSize = QSize(screenGeometry.width(), iconSize);
+            newSize = QSize(screenGeometry.width(), thickness);
             position.setX(screenGeometry.x());
             position.setY(screenGeometry.y() + screenGeometry.height() - newSize.height());
             break;
         case DockSettings::Right:
-            newSize = QSize(iconSize, screenGeometry.height());
+            newSize = QSize(thickness, screenGeometry.height());
             position.setX(screenGeometry.x() + screenGeometry.width() - newSize.width());
             position.setY(screenGeometry.y() + screenGeometry.height() - newSize.height());
             break;
@@ -245,6 +266,7 @@ QRect MainWindow::windowRect() const
 
 void MainWindow::resizeWindow()
 {
+    updateMetrics();
     setGeometry(windowRect());
     updateViewStruts();
 

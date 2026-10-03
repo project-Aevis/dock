@@ -28,6 +28,7 @@
 #include "applicationmodel.h"
 #include "fakewindow.h"
 #include "trashmanager.h"
+#include "dockmetrics.h"
 
 class MainWindow : public QQuickView
 {
@@ -36,6 +37,7 @@ class MainWindow : public QQuickView
     Q_PROPERTY(int direction READ direction NOTIFY directionChanged)
     Q_PROPERTY(int visibility READ visibility NOTIFY visibilityChanged)
     Q_PROPERTY(int style READ style NOTIFY styleChanged)
+    Q_PROPERTY(QVariantMap metrics READ metrics NOTIFY metricsChanged)
 
 public:
     explicit MainWindow(QQuickView *parent = nullptr);
@@ -50,6 +52,7 @@ public:
     int direction() const;
 
     int visibility() const;
+    QVariantMap metrics() const { return m_metrics.toVariantMap(); }
 
     void setDirection(int direction);
     void setIconSize(int iconSize);
@@ -67,8 +70,10 @@ signals:
     void primaryGeometryChanged();
     void visibilityChanged();
     void styleChanged();
+    void metricsChanged();
 
 private:
+    void updateMetrics();
     QRect windowRect() const;
     void resizeWindow();
     void initScreens();
@@ -94,6 +99,7 @@ protected:
 private:
     Activity *m_activity;
     DockSettings *m_settings;
+    DockMetrics m_metrics;
     ApplicationModel *m_appModel;
     FakeWindow *m_fakeWindow;
     TrashManager *m_trashManager;

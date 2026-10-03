@@ -46,7 +46,7 @@ DockSettings::DockSettings(QObject *parent)
     , m_settings(new QSettings(QSettings::UserScope, "cutefishos", "dock"))
 {
     if (!m_settings->contains("IconSize"))
-        m_settings->setValue("IconSize", 53);
+        m_settings->setValue("IconSize", 60);
     if (!m_settings->contains("Direction"))
         m_settings->setValue("Direction", Bottom);
     if (!m_settings->contains("Visibility"))
