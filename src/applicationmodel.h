@@ -21,6 +21,7 @@
 #define APPLICATIONMODEL_H
 
 #include <QAbstractListModel>
+#include <QSortFilterProxyModel>
 #include "applicationitem.h"
 #include "systemappmonitor.h"
 #include "xwindowinterface.h"
@@ -28,6 +29,8 @@
 class ApplicationModel : public QAbstractListModel
 {
     Q_OBJECT
+    Q_PROPERTY(QAbstractItemModel* pinnedModel READ pinnedModel CONSTANT)
+    Q_PROPERTY(QAbstractItemModel* unpinnedModel READ unpinnedModel CONSTANT)
 
 public:
     enum Roles {
@@ -42,6 +45,9 @@ public:
     };
 
     explicit ApplicationModel(QObject *parent = nullptr);
+
+    QAbstractItemModel *pinnedModel() const { return m_pinnedModel; }
+    QAbstractItemModel *unpinnedModel() const { return m_unpinnedModel; }
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     QHash<int, QByteArray> roleNames() const override;
@@ -92,6 +98,8 @@ private:
     XWindowInterface *m_iface;
     SystemAppMonitor *m_sysAppMonitor;
     QList<ApplicationItem *> m_appItems;
+    QSortFilterProxyModel *m_pinnedModel = nullptr;
+    QSortFilterProxyModel *m_unpinnedModel = nullptr;
 };
 
 #endif // APPLICATIONMODEL_H
