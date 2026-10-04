@@ -48,7 +48,7 @@ Item {
     property int thickness: isHorizontal ? root.height : root.width
     property real windowRadius: thickness * 28 / 86
     property real iconSizeRatio: 1.0
-    property int itemSize: Math.max(1, thickness - root.dotAreaSize - root.outerPadding)
+    property int itemSize: (metrics && metrics.iconSize) ? metrics.iconSize : Math.max(1, thickness - root.dotAreaSize - root.outerPadding)
 
     property real hoverPos: -1
     property bool isHovered: false
@@ -83,28 +83,15 @@ Item {
         anchors.fill: parent
         radius: root.windowRadius
 
-        // Uniform frosted glass material with vertical specular gradient
-        gradient: Gradient {
-            GradientStop {
-                position: 0.0
-                color: FishUI.Theme.darkMode ? Qt.rgba(0.20, 0.20, 0.24, 0.70)
-                                             : Qt.rgba(1.0, 1.0, 1.0, 0.82)
-            }
-            GradientStop {
-                position: 1.0
-                color: FishUI.Theme.darkMode ? Qt.rgba(0.10, 0.10, 0.12, 0.58)
-                                             : Qt.rgba(0.92, 0.92, 0.95, 0.65)
-            }
-        }
-        opacity: FishUI.Theme.blurEnabled ? 0.96 : 1.0
+        color: FishUI.Theme.darkMode ? Qt.rgba(0.12, 0.14, 0.20, 0.68)
+                                     : Qt.rgba(0.92, 0.94, 0.98, 0.72)
 
-        // Outer contrast rim
         border.width: 1 / FishUI.Dpi.ratio
         border.pixelAligned: FishUI.Dpi.ratio > 1 ? false : true
-        border.color: FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.16)
-                                            : Qt.rgba(0, 0, 0, 0.14)
+        border.color: FishUI.Theme.darkMode ? Qt.rgba(1, 1, 1, 0.28)
+                                            : Qt.rgba(1, 1, 1, 0.95)
 
-        // Inner delicate light edge
+        // Inner Specular Glass Rim
         Rectangle {
             id: innerHighlight
             anchors.fill: parent
@@ -112,8 +99,8 @@ Item {
             radius: Math.max(0, parent.radius - 1)
             color: "transparent"
             border.width: 1 / FishUI.Dpi.ratio
-            border.color: FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.12)
-                                                : Qt.rgba(255, 255, 255, 0.85)
+            border.color: FishUI.Theme.darkMode ? Qt.rgba(1, 1, 1, 0.10)
+                                                : Qt.rgba(1, 1, 1, 0.50)
         }
     }
 
@@ -129,12 +116,13 @@ Item {
         enabled: FishUI.Theme.blurEnabled
     }
 
-    // macOS Style Frosted Dark Tooltip
+    // macOS Style Frosted Light/Dark Tooltip
     FishUI.PopupTips {
         id: popupTips
-        backgroundColor: FishUI.Theme.darkMode ? Qt.rgba(0.12, 0.12, 0.14, 0.90)
-                                               : Qt.rgba(0.18, 0.18, 0.22, 0.90)
-        borderColor: Qt.rgba(255, 255, 255, 0.20)
+        backgroundColor: FishUI.Theme.darkMode ? Qt.rgba(0.12, 0.12, 0.14, 0.92)
+                                               : Qt.rgba(0.96, 0.96, 0.98, 0.95)
+        borderColor: FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.20)
+                                           : Qt.rgba(0, 0, 0, 0.15)
         blurEnabled: true
     }
 
@@ -167,40 +155,37 @@ Item {
 
     GridLayout {
         id: mainLayout
-        anchors.fill: parent
-        // The dot area is always on the side that faces the screen edge.
-        anchors.leftMargin: isHorizontal ? root.lengthPadding
-                                         : isLeft ? root.dotAreaSize : root.outerPadding
-        anchors.rightMargin: isHorizontal ? root.lengthPadding
-                                          : isRight ? root.dotAreaSize : root.outerPadding
-        anchors.topMargin: isHorizontal ? root.outerPadding : root.lengthPadding
-        anchors.bottomMargin: isHorizontal ? root.dotAreaSize : root.lengthPadding
-        flow: isHorizontal ? Grid.LeftToRight : Grid.TopToBottom
-        columnSpacing: isHorizontal ? root.iconGap : 0
-        rowSpacing: isHorizontal ? 0 : root.iconGap
+        anchors.centerIn: parent
+        flow: root.isHorizontal ? Grid.LeftToRight : Grid.TopToBottom
+        columns: root.isHorizontal ? -1 : 1
+        rows: root.isHorizontal ? 1 : -1
+        columnSpacing: root.isHorizontal ? root.iconGap : 0
+        rowSpacing: root.isHorizontal ? 0 : root.iconGap
 
+        // 1. Pinned Apps ListView (Left/Top of Divider)
         ListView {
-            id: appItemView
-            orientation: isHorizontal ? Qt.Horizontal : Qt.Vertical
+            id: pinnedAppItemView
+            orientation: root.isHorizontal ? Qt.Horizontal : Qt.Vertical
             spacing: root.iconGap
             snapMode: ListView.SnapToItem
             interactive: false
-            model: appModel
+            model: appModel ? appModel.pinnedModel : null
             clip: false
 
-            Layout.fillHeight: true
-            Layout.fillWidth: true
-            Layout.preferredWidth: root.isHorizontal
-                                  ? Math.max(0, root.width - 2 * root.lengthPadding
-                                             - root.iconGap - root.itemSize - root.dividerSlotWidth)
-                                  : -1
-            Layout.preferredHeight: root.isHorizontal
-                                   ? -1
-                                   : Math.max(0, root.height - 2 * root.lengthPadding
-                                              - root.iconGap - root.itemSize - root.dividerSlotWidth)
+            Layout.fillHeight: !root.isHorizontal
+            Layout.fillWidth: root.isHorizontal
+            Layout.preferredWidth: root.isHorizontal ? (contentWidth + 2) : root.itemSize
+            Layout.preferredHeight: root.isHorizontal ? root.itemSize : (contentHeight + 2)
+
+            Layout.maximumWidth: root.isHorizontal
+                ? Math.max(root.itemSize, root.width - (unpinnedAppItemView.contentWidth + root.dividerSlotWidth + root.itemSize + 4 * root.iconGap + 2 * root.lengthPadding))
+                : root.itemSize
+            Layout.maximumHeight: !root.isHorizontal
+                ? Math.max(root.itemSize, root.height - (unpinnedAppItemView.contentHeight + root.dividerSlotWidth + root.itemSize + 4 * root.iconGap + 2 * root.lengthPadding))
+                : root.itemSize
 
             delegate: AppItem {
-                id: appItemDelegate
+                id: pinnedAppItemDelegate
                 property bool shouldAnimateOnAdd: dock.geometryAnimationAdding
                                                  && model.animationToken === dock.geometryAnimationToken
                 property real addProgress: shouldAnimateOnAdd
@@ -216,58 +201,9 @@ Item {
                 opacity: addProgress
                 iconSizeRatio: root.iconSizeRatio
             }
-
-            // Let the icon disappear into itself instead of vanishing when a
-            // window closes or an application is unpinned.
-            remove: Transition {
-                ParallelAnimation {
-                    NumberAnimation {
-                        property: "layoutProgress"
-                        to: 0.0
-                        duration: 180
-                        easing.type: Easing.OutCubic
-                    }
-                    NumberAnimation {
-                        property: "scale"
-                        to: 0.0
-                        duration: 180
-                        easing.type: Easing.InCubic
-                    }
-                    NumberAnimation {
-                        property: "opacity"
-                        to: 0.0
-                        duration: 140
-                        easing.type: Easing.InCubic
-                    }
-                }
-            }
-
-            addDisplaced: Transition {
-                NumberAnimation {
-                    properties: "x, y"
-                    duration: 180
-                    easing.type: Easing.OutCubic
-                }
-            }
-
-            removeDisplaced: Transition {
-                NumberAnimation {
-                    properties: "x, y"
-                    duration: 180
-                    easing.type: Easing.OutCubic
-                }
-            }
-
-            moveDisplaced: Transition {
-                NumberAnimation {
-                    properties: "x, y"
-                    duration: 300
-                    easing.type: Easing.InOutQuad
-                }
-            }
         }
 
-        // macOS Glass Divider
+        // 2. macOS Glass Divider
         Item {
             id: dockDivider
             implicitWidth: root.isHorizontal ? root.dividerSlotWidth : root.itemSize
@@ -290,6 +226,47 @@ Item {
                     color: FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.06)
                                                  : Qt.rgba(255, 255, 255, 0.5)
                 }
+            }
+        }
+
+        // 3. Unpinned Apps ListView (Right/Bottom of Divider, Left/Top of Trash Bin)
+        ListView {
+            id: unpinnedAppItemView
+            orientation: root.isHorizontal ? Qt.Horizontal : Qt.Vertical
+            spacing: root.iconGap
+            snapMode: ListView.SnapToItem
+            interactive: false
+            model: appModel ? appModel.unpinnedModel : null
+            clip: false
+
+            Layout.fillHeight: !root.isHorizontal
+            Layout.fillWidth: root.isHorizontal
+            Layout.preferredWidth: root.isHorizontal ? (contentWidth + 2) : root.itemSize
+            Layout.preferredHeight: root.isHorizontal ? root.itemSize : (contentHeight + 2)
+
+            Layout.maximumWidth: root.isHorizontal
+                ? Math.max(0, root.width - (pinnedAppItemView.contentWidth + root.dividerSlotWidth + root.itemSize + 4 * root.iconGap + 2 * root.lengthPadding))
+                : root.itemSize
+            Layout.maximumHeight: !root.isHorizontal
+                ? Math.max(0, root.height - (pinnedAppItemView.contentHeight + root.dividerSlotWidth + root.itemSize + 4 * root.iconGap + 2 * root.lengthPadding))
+                : root.itemSize
+
+            delegate: AppItem {
+                id: unpinnedAppItemDelegate
+                property bool shouldAnimateOnAdd: dock.geometryAnimationAdding
+                                                 && model.animationToken === dock.geometryAnimationToken
+                property real addProgress: shouldAnimateOnAdd
+                                          ? dock.geometryAnimationProgress : 1.0
+                property real layoutProgress: addProgress
+                property real layoutWidth: root.itemSize * layoutProgress
+                property real layoutHeight: root.itemSize * layoutProgress
+
+                width: root.isHorizontal ? layoutWidth : root.itemSize
+                height: root.isHorizontal ? root.itemSize : layoutHeight
+                scale: addProgress
+                transformOrigin: Item.Center
+                opacity: addProgress
+                iconSizeRatio: root.iconSizeRatio
             }
         }
 

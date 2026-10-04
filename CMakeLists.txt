@@ -20,6 +20,7 @@ pkg_check_modules(XCB REQUIRED IMPORTED_TARGET xcb)
 set(SRCS
     src/applicationitem.h
     src/applicationmodel.cpp
+    src/dockmetrics.h
     src/docksettings.cpp
     src/iconthemeimageprovider.cpp
     src/main.cpp

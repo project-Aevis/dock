@@ -74,8 +74,8 @@ Item {
 
     Behavior on currentScale {
         NumberAnimation {
-            duration: root.isHovered ? 70 : 180
-            easing.type: root.isHovered ? Easing.OutQuad : Easing.OutCubic
+            duration: root.isHovered ? 80 : 220
+            easing.type: root.isHovered ? Easing.OutQuint : Easing.OutBack
         }
     }
 
@@ -245,12 +245,23 @@ Item {
         width: control.iconSize
         height: control.iconSize
         source: control.resolveIconSource(control.iconName)
-        sourceSize: Qt.size(256, 256)
+        sourceSize: Qt.size(128, 128)
         fillMode: Image.PreserveAspectFit
         asynchronous: false
         mipmap: true
         smooth: true
         antialiasing: true
+
+        // HarmonyOS Continuous Squircle Mask to guarantee zero sharp corners across all app icons
+        layer.enabled: true
+        layer.smooth: true
+        layer.effect: OpacityMask {
+            maskSource: Rectangle {
+                width: icon.width
+                height: icon.height
+                radius: icon.width * 0.22
+            }
+        }
 
         function updateIcon() {
             var s = icon.source
@@ -391,29 +402,22 @@ Item {
         // Glow halo for frontmost active app
         Rectangle {
             anchors.centerIn: parent
-            width: parent.width * 2.4
-            height: parent.height * 2.4
+            width: parent.width * 2.8
+            height: parent.height * 2.8
             radius: width / 2
-            color: FishUI.Theme.darkMode ? Qt.rgba(1, 1, 1, 0.25)
-                                         : Qt.rgba(0, 0, 0, 0.15)
+            color: Qt.rgba(0, 122, 255, 0.35)
             visible: control.isActive
             Behavior on visible { PropertyAnimation { duration: 200 } }
         }
 
-        // Crisp circular pearl dot
+        // Crisp circular LED dot
         Rectangle {
             id: activeDot
             anchors.fill: parent
             radius: width / 2
-            color: {
-                if (control.isActive) {
-                    return FishUI.Theme.darkMode ? Qt.rgba(1, 1, 1, 0.98)
-                                                 : Qt.rgba(0.12, 0.12, 0.15, 0.95)
-                } else {
-                    return FishUI.Theme.darkMode ? Qt.rgba(1, 1, 1, 0.60)
-                                                 : Qt.rgba(0.20, 0.20, 0.25, 0.50)
-                }
-            }
+            color: control.isActive ? "#007AFF"
+                                    : (FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.70)
+                                                             : Qt.rgba(0, 122, 255, 0.65))
 
             Behavior on color {
                 ColorAnimation { duration: 180 }

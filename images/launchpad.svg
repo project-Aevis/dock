@@ -1,204 +1,232 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- Master Apple Squircle Silver-Platinum Aluminum Material -->
-    <linearGradient id="metalBody" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="25%" stop-color="#F2F3F6"/>
-      <stop offset="65%" stop-color="#DDE1E7"/>
-      <stop offset="100%" stop-color="#C2C7D0"/>
+    <!-- Master Drop Shadow -->
+    <filter id="launchpadShadow" x="-12%" y="-10%" width="124%" height="128%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000000" flood-opacity="0.45"/>
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.25"/>
+    </filter>
+
+    <!-- Base Squircle Clip -->
+    <clipPath id="squircleClip">
+      <rect x="24" y="24" width="464" height="464" rx="108" ry="108"/>
+    </clipPath>
+
+    <!-- Modern Dark Graphite Glass Plate -->
+    <linearGradient id="plateBg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3a3d45"/>
+      <stop offset="35%" stop-color="#282a30"/>
+      <stop offset="100%" stop-color="#18191d"/>
     </linearGradient>
 
-    <!-- Top Surface Specular Gloss Luster -->
-    <linearGradient id="topLuster" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.85"/>
-      <stop offset="35%" stop-color="#FFFFFF" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.0"/>
+    <!-- Top Specular Luster -->
+    <linearGradient id="plateSheen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.03"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.25"/>
     </linearGradient>
 
-    <!-- Inset Bevel Stroke -->
-    <linearGradient id="bevelRim" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.90"/>
-      <stop offset="50%" stop-color="#B0B6C2" stop-opacity="0.60"/>
-      <stop offset="100%" stop-color="#7C8492" stop-opacity="0.40"/>
+    <!-- Inner Border Stroke -->
+    <linearGradient id="rimStroke" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.04"/>
     </linearGradient>
 
-    <!-- Individual Tile Gradients -->
-    <!-- Tile 1: Safari / Web (Cyan to Ocean Blue) -->
-    <linearGradient id="tile1" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#38BDF8"/>
-      <stop offset="100%" stop-color="#0284C7"/>
+    <!-- Mini Tile Shadows -->
+    <filter id="tileShadow" x="-20%" y="-15%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.45"/>
+      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
+    </filter>
+
+    <!-- TILE GRADIENTS -->
+    <!-- 1. Safari / Browser -->
+    <linearGradient id="gSafari" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
     </linearGradient>
 
-    <!-- Tile 2: Calculator (Vibrant Tangerine Orange) -->
-    <linearGradient id="tile2" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FB923C"/>
-      <stop offset="100%" stop-color="#EA580C"/>
+    <!-- 2. Calculator -->
+    <linearGradient id="gCalc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#ea580c"/>
     </linearGradient>
 
-    <!-- Tile 3: Music (Vivid Coral Rose) -->
-    <linearGradient id="tile3" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FB7185"/>
-      <stop offset="100%" stop-color="#E11D48"/>
+    <!-- 3. Photos -->
+    <linearGradient id="gPhotos" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
     </linearGradient>
 
-    <!-- Tile 4: Messages (Emerald Mint Green) -->
-    <linearGradient id="tile4" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#34D399"/>
-      <stop offset="100%" stop-color="#059669"/>
+    <!-- 4. Messages -->
+    <linearGradient id="gMsg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#16a34a"/>
     </linearGradient>
 
-    <!-- Tile 5: Podcasts / Entertainment (Deep Violet Purple) -->
-    <linearGradient id="tile5" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#A78BFA"/>
-      <stop offset="100%" stop-color="#7C3AED"/>
+    <!-- 5. Music -->
+    <linearGradient id="gMusic" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fb7185"/>
+      <stop offset="100%" stop-color="#e11d48"/>
     </linearGradient>
 
-    <!-- Tile 6: App Store (Electric Cobalt Blue) -->
-    <linearGradient id="tile6" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#60A5FA"/>
-      <stop offset="100%" stop-color="#2563EB"/>
+    <!-- 6. Mail -->
+    <linearGradient id="gMail" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#2563eb"/>
     </linearGradient>
 
-    <!-- Tile 7: Photos (Porcelain White Base) -->
-    <linearGradient id="tile7" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#E2E8F0"/>
+    <!-- 7. Notes -->
+    <linearGradient id="gNotes" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a"/>
+      <stop offset="100%" stop-color="#facc15"/>
     </linearGradient>
 
-    <!-- Tile 8: Notes (Sunny Golden Amber) -->
-    <linearGradient id="tile8" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FDE047"/>
-      <stop offset="100%" stop-color="#EAB308"/>
+    <!-- 8. Maps -->
+    <linearGradient id="gMaps" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2dd4bf"/>
+      <stop offset="100%" stop-color="#0d9488"/>
     </linearGradient>
 
-    <!-- Tile 9: Settings (Titanium Slate) -->
-    <linearGradient id="tile9" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#94A3B8"/>
+    <!-- 9. Settings -->
+    <linearGradient id="gSettings" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#94a3b8"/>
       <stop offset="100%" stop-color="#475569"/>
     </linearGradient>
+
+    <!-- Tile Clip for Maps -->
+    <clipPath id="mapsTileClip">
+      <rect x="212" y="324" width="88" height="88" rx="22" ry="22"/>
+    </clipPath>
   </defs>
 
-  <!-- Ambient Drop Shadow -->
-  <rect x="36" y="44" width="440" height="440" rx="106" fill="#000000" opacity="0.28"/>
-  <rect x="35" y="38" width="442" height="442" rx="106" fill="#000000" opacity="0.14"/>
+  <!-- Base Drop Shadow -->
+  <rect x="24" y="24" width="464" height="464" rx="108" ry="108" filter="url(#launchpadShadow)" fill="#18191d"/>
 
-  <!-- Master Silver Squircle Body -->
-  <rect x="34" y="34" width="444" height="444" rx="106" fill="url(#metalBody)"/>
-  <rect x="34" y="34" width="444" height="222" rx="106" fill="url(#topLuster)"/>
-  <rect x="35" y="35" width="442" height="442" rx="105" fill="none" stroke="url(#bevelRim)" stroke-width="2.5"/>
+  <!-- Base Plate -->
+  <g clip-path="url(#squircleClip)">
+    <rect x="24" y="24" width="464" height="464" rx="108" ry="108" fill="url(#plateBg)"/>
+    <rect x="24" y="24" width="464" height="464" rx="108" ry="108" fill="url(#plateSheen)"/>
+    <rect x="24.5" y="24.5" width="463" height="463" rx="107.5" ry="107.5" fill="none" stroke="url(#rimStroke)" stroke-width="1.5"/>
 
-  <!-- ==================================================== -->
-  <!-- ROW 1 (y = 76) -->
-  <!-- ==================================================== -->
+    <!-- ==================== 3x3 APP GRID ==================== -->
 
-  <!-- Tile 1: Safari (x = 76) -->
-  <g transform="translate(76, 76)">
-    <rect x="1" y="3" width="94" height="94" rx="22" fill="#000000" opacity="0.20"/>
-    <rect x="0" y="0" width="94" height="94" rx="22" fill="url(#tile1)"/>
-    <rect x="0.5" y="0.5" width="93" height="93" rx="21.5" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.35"/>
-    <!-- Compass dial -->
-    <circle cx="47" cy="47" r="28" fill="none" stroke="#FFFFFF" stroke-width="2.4" opacity="0.9"/>
-    <polygon points="47,24 53,47 47,43 41,47" fill="#EF4444"/>
-    <polygon points="47,70 53,47 47,51 41,47" fill="#FFFFFF"/>
-    <circle cx="47" cy="47" r="3.2" fill="#0F172A"/>
-  </g>
+    <!-- [ROW 0] -->
 
-  <!-- Tile 2: Calculator (x = 209) -->
-  <g transform="translate(209, 76)">
-    <rect x="1" y="3" width="94" height="94" rx="22" fill="#000000" opacity="0.20"/>
-    <rect x="0" y="0" width="94" height="94" rx="22" fill="url(#tile2)"/>
-    <rect x="0.5" y="0.5" width="93" height="93" rx="21.5" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.35"/>
-    <path d="M 33 28 L 33 42 M 26 35 L 40 35" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-    <path d="M 54 35 L 68 35" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-    <path d="M 28 56 L 38 66 M 38 56 L 28 66" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-    <path d="M 54 58 L 68 58 M 54 64 L 68 64" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-  </g>
-
-  <!-- Tile 3: Music (x = 342) -->
-  <g transform="translate(342, 76)">
-    <rect x="1" y="3" width="94" height="94" rx="22" fill="#000000" opacity="0.20"/>
-    <rect x="0" y="0" width="94" height="94" rx="22" fill="url(#tile3)"/>
-    <rect x="0.5" y="0.5" width="93" height="93" rx="21.5" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.35"/>
-    <ellipse cx="37" cy="65" rx="8" ry="6" fill="#FFFFFF" transform="rotate(-15 37 65)"/>
-    <ellipse cx="61" cy="58" rx="8" ry="6" fill="#FFFFFF" transform="rotate(-15 61 58)"/>
-    <path d="M 43 62 L 43 32 L 67 25 L 67 55" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <polygon points="43,32 67,25 67,31 43,38" fill="#FFFFFF"/>
-  </g>
-
-  <!-- ==================================================== -->
-  <!-- ROW 2 (y = 209) -->
-  <!-- ==================================================== -->
-
-  <!-- Tile 4: Messages (x = 76) -->
-  <g transform="translate(76, 209)">
-    <rect x="1" y="3" width="94" height="94" rx="22" fill="#000000" opacity="0.20"/>
-    <rect x="0" y="0" width="94" height="94" rx="22" fill="url(#tile4)"/>
-    <rect x="0.5" y="0.5" width="93" height="93" rx="21.5" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.35"/>
-    <path d="M 47 24 C 30 24 18 34 18 47 C 18 55 23 62 31 66 L 27 75 L 39 71 C 42 71.5 44.5 72 47 72 C 64 72 76 62 76 47 C 76 34 64 24 47 24 Z" fill="#FFFFFF"/>
-  </g>
-
-  <!-- Tile 5: Podcasts (x = 209) -->
-  <g transform="translate(209, 209)">
-    <rect x="1" y="3" width="94" height="94" rx="22" fill="#000000" opacity="0.20"/>
-    <rect x="0" y="0" width="94" height="94" rx="22" fill="url(#tile5)"/>
-    <rect x="0.5" y="0.5" width="93" height="93" rx="21.5" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.35"/>
-    <circle cx="47" cy="40" r="7" fill="#FFFFFF"/>
-    <path d="M 47 48 L 47 70 M 38 72 L 56 72" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
-    <path d="M 33 34 A 18 18 0 0 0 33 46" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-    <path d="M 61 34 A 18 18 0 0 1 61 46" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-    <path d="M 24 26 A 30 30 0 0 0 24 54" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-    <path d="M 70 26 A 30 30 0 0 1 70 54" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
-  </g>
-
-  <!-- Tile 6: App Store (x = 342) -->
-  <g transform="translate(342, 209)">
-    <rect x="1" y="3" width="94" height="94" rx="22" fill="#000000" opacity="0.20"/>
-    <rect x="0" y="0" width="94" height="94" rx="22" fill="url(#tile6)"/>
-    <rect x="0.5" y="0.5" width="93" height="93" rx="21.5" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.35"/>
-    <path d="M 47 24 L 23 68 M 47 24 L 71 68 M 30 54 L 64 54" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  </g>
-
-  <!-- ==================================================== -->
-  <!-- ROW 3 (y = 342) -->
-  <!-- ==================================================== -->
-
-  <!-- Tile 7: Photos (x = 76) -->
-  <g transform="translate(76, 342)">
-    <rect x="1" y="3" width="94" height="94" rx="22" fill="#000000" opacity="0.20"/>
-    <rect x="0" y="0" width="94" height="94" rx="22" fill="url(#tile7)"/>
-    <rect x="0.5" y="0.5" width="93" height="93" rx="21.5" fill="none" stroke="#CBD5E1" stroke-width="1"/>
-    <!-- Multi-Color Flower Petals -->
-    <g transform="translate(47, 47)">
-      <ellipse cx="0" cy="-15" rx="6.5" ry="12" fill="#EF4444" opacity="0.95"/>
-      <ellipse cx="13" cy="-7.5" rx="6.5" ry="12" fill="#F97316" opacity="0.95" transform="rotate(60 13 -7.5)"/>
-      <ellipse cx="13" cy="7.5" rx="6.5" ry="12" fill="#EAB308" opacity="0.95" transform="rotate(120 13 7.5)"/>
-      <ellipse cx="0" cy="15" rx="6.5" ry="12" fill="#22C55E" opacity="0.95"/>
-      <ellipse cx="-13" cy="7.5" rx="6.5" ry="12" fill="#3B82F6" opacity="0.95" transform="rotate(60 -13 7.5)"/>
-      <ellipse cx="-13" cy="-7.5" rx="6.5" ry="12" fill="#A855F7" opacity="0.95" transform="rotate(120 -13 -7.5)"/>
-      <circle cx="0" cy="0" r="4.5" fill="#FFFFFF"/>
+    <!-- (0, 0): Safari / Web -->
+    <g filter="url(#tileShadow)">
+      <rect x="100" y="100" width="88" height="88" rx="22" fill="url(#gSafari)"/>
+      <rect x="100.5" y="100.5" width="87" height="87" rx="21.5" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+      <!-- Compass dial & needle -->
+      <circle cx="144" cy="144" r="26" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.85"/>
+      <g transform="translate(144, 144) rotate(45)">
+        <polygon points="0,-21 5,0 -5,0" fill="#ef4444"/>
+        <polygon points="0,21 5,0 -5,0" fill="#ffffff"/>
+        <circle cx="0" cy="0" r="3.5" fill="#ffffff"/>
+        <circle cx="0" cy="0" r="1.5" fill="#ef4444"/>
+      </g>
     </g>
-  </g>
 
-  <!-- Tile 8: Notes (x = 209) -->
-  <g transform="translate(209, 342)">
-    <rect x="1" y="3" width="94" height="94" rx="22" fill="#000000" opacity="0.20"/>
-    <rect x="0" y="0" width="94" height="94" rx="22" fill="url(#tile8)"/>
-    <rect x="0.5" y="0.5" width="93" height="93" rx="21.5" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.35"/>
-    <rect x="22" y="24" width="50" height="46" rx="4" fill="#FFFFFF" opacity="0.95"/>
-    <line x1="28" y1="36" x2="66" y2="36" stroke="#CA8A04" stroke-width="2.5" stroke-linecap="round"/>
-    <line x1="28" y1="46" x2="66" y2="46" stroke="#CA8A04" stroke-width="2.5" stroke-linecap="round"/>
-    <line x1="28" y1="56" x2="52" y2="56" stroke="#CA8A04" stroke-width="2.5" stroke-linecap="round"/>
-  </g>
-
-  <!-- Tile 9: Settings (x = 342) -->
-  <g transform="translate(342, 342)">
-    <rect x="1" y="3" width="94" height="94" rx="22" fill="#000000" opacity="0.20"/>
-    <rect x="0" y="0" width="94" height="94" rx="22" fill="url(#tile9)"/>
-    <rect x="0.5" y="0.5" width="93" height="93" rx="21.5" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.35"/>
-    <g transform="translate(47, 47)">
-      <circle cx="0" cy="0" r="23" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-dasharray="10 5"/>
-      <circle cx="0" cy="0" r="17" fill="#64748B"/>
-      <circle cx="0" cy="0" r="7" fill="#1E293B"/>
+    <!-- (0, 1): Calculator -->
+    <g filter="url(#tileShadow)">
+      <rect x="212" y="100" width="88" height="88" rx="22" fill="url(#gCalc)"/>
+      <rect x="212.5" y="100.5" width="87" height="87" rx="21.5" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+      <path d="M 233,130 H 247 M 240,123 V 137" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M 265,130 H 279" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M 235,153 L 245,163 M 245,153 L 235,163" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
+      <path d="M 265,154 H 279 M 265,162 H 279" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round"/>
     </g>
+
+    <!-- (0, 2): Photos / Rainbow Wheel -->
+    <g filter="url(#tileShadow)">
+      <rect x="324" y="100" width="88" height="88" rx="22" fill="url(#gPhotos)"/>
+      <rect x="324.5" y="100.5" width="87" height="87" rx="21.5" fill="none" stroke="#000000" stroke-width="1" opacity="0.08"/>
+      <!-- Rainbow Petals centered at 368, 144 -->
+      <g transform="translate(368, 144)">
+        <ellipse cx="0" cy="-14" rx="7" ry="11" fill="#f43f5e" opacity="0.9"/>
+        <ellipse cx="10" cy="-10" rx="7" ry="11" fill="#fb923c" transform="rotate(45)" opacity="0.9"/>
+        <ellipse cx="14" cy="0" rx="7" ry="11" fill="#facc15" transform="rotate(90)" opacity="0.9"/>
+        <ellipse cx="10" cy="10" rx="7" ry="11" fill="#4ade80" transform="rotate(135)" opacity="0.9"/>
+        <ellipse cx="0" cy="14" rx="7" ry="11" fill="#2dd4bf" transform="rotate(180)" opacity="0.9"/>
+        <ellipse cx="-10" cy="10" rx="7" ry="11" fill="#38bdf8" transform="rotate(225)" opacity="0.9"/>
+        <ellipse cx="-14" cy="0" rx="7" ry="11" fill="#818cf8" transform="rotate(270)" opacity="0.9"/>
+        <ellipse cx="-10" cy="-10" rx="7" ry="11" fill="#c084fc" transform="rotate(315)" opacity="0.9"/>
+        <circle cx="0" cy="0" r="5" fill="#ffffff"/>
+      </g>
+    </g>
+
+    <!-- [ROW 1] -->
+
+    <!-- (1, 0): Messages -->
+    <g filter="url(#tileShadow)">
+      <rect x="100" y="212" width="88" height="88" rx="22" fill="url(#gMsg)"/>
+      <rect x="100.5" y="212.5" width="87" height="87" rx="21.5" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+      <path d="M 124,250 C 124,239 133,231 144,231 C 155,231 164,239 164,250 C 164,261 155,269 144,269 C 140,269 136,268 133,266 L 126,271 L 128,263 C 125,259 124,255 124,250 Z" fill="#ffffff"/>
+    </g>
+
+    <!-- (1, 1): Music -->
+    <g filter="url(#tileShadow)">
+      <rect x="212" y="212" width="88" height="88" rx="22" fill="url(#gMusic)"/>
+      <rect x="212.5" y="212.5" width="87" height="87" rx="21.5" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+      <path d="M 262,233 V 262 C 262,266 258,269 253,269 C 248,269 244,266 244,262 C 244,258 248,255 253,255 C 255,255 256,256 258,257 V 242 L 240,246 V 267 C 240,271 236,274 231,274 C 226,274 222,271 222,267 C 222,263 226,260 231,260 C 233,260 234,261 236,262 V 239 C 236,236 238,233 241,232.5 L 259,228.5 C 261,228 262,230 262,233 Z" fill="#ffffff"/>
+    </g>
+
+    <!-- (1, 2): Mail -->
+    <g filter="url(#tileShadow)">
+      <rect x="324" y="212" width="88" height="88" rx="22" fill="url(#gMail)"/>
+      <rect x="324.5" y="212.5" width="87" height="87" rx="21.5" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+      <rect x="344" y="236" width="48" height="36" rx="6" fill="#ffffff"/>
+      <path d="M 346,238 L 368,256 L 390,238" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- [ROW 2] -->
+
+    <!-- (2, 0): Notes -->
+    <g filter="url(#tileShadow)">
+      <rect x="100" y="324" width="88" height="88" rx="22" fill="url(#gNotes)"/>
+      <rect x="100.5" y="324.5" width="87" height="87" rx="21.5" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.45"/>
+      <!-- Top header strip -->
+      <path d="M 100,344 H 188 V 346 H 100 Z" fill="#eab308"/>
+      <!-- Lines -->
+      <line x1="116" y1="358" x2="172" y2="358" stroke="#a16207" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+      <line x1="116" y1="372" x2="164" y2="372" stroke="#a16207" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+      <line x1="116" y1="386" x2="152" y2="386" stroke="#a16207" stroke-width="2.5" stroke-linecap="round" opacity="0.5"/>
+    </g>
+
+    <!-- (2, 1): Maps -->
+    <g filter="url(#tileShadow)">
+      <rect x="212" y="324" width="88" height="88" rx="22" fill="url(#gMaps)"/>
+      <g clip-path="url(#mapsTileClip)">
+        <!-- Roads -->
+        <path d="M 212,348 Q 256,368 300,344" stroke="#ffffff" stroke-width="7" fill="none" opacity="0.7"/>
+        <path d="M 256,324 V 412" stroke="#f59e0b" stroke-width="5" fill="none" opacity="0.75"/>
+      </g>
+      <rect x="212.5" y="324.5" width="87" height="87" rx="21.5" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+      <!-- Pin -->
+      <g transform="translate(256, 364)">
+        <path d="M 0,-14 C -6,-14 -10,-10 -10,-4 C -10,4 0,14 0,14 C 0,14 10,4 10,-4 C 10,-10 6,-14 0,-14 Z" fill="#ef4444"/>
+        <circle cx="0" cy="-4" r="3.5" fill="#ffffff"/>
+      </g>
+    </g>
+
+    <!-- (2, 2): Settings -->
+    <g filter="url(#tileShadow)">
+      <rect x="324" y="324" width="88" height="88" rx="22" fill="url(#gSettings)"/>
+      <rect x="324.5" y="324.5" width="87" height="87" rx="21.5" fill="none" stroke="#ffffff" stroke-width="1" opacity="0.35"/>
+      <!-- Precision 8-tooth gear -->
+      <g transform="translate(368, 368)">
+        <circle cx="0" cy="0" r="14" fill="none" stroke="#ffffff" stroke-width="5"/>
+        <circle cx="0" cy="0" r="7" fill="#ffffff"/>
+        <!-- 8 Teeth -->
+        <rect x="-3" y="-23" width="6" height="7" rx="2" fill="#ffffff"/>
+        <rect x="-3" y="16" width="6" height="7" rx="2" fill="#ffffff"/>
+        <rect x="-23" y="-3" width="7" height="6" rx="2" fill="#ffffff"/>
+        <rect x="16" y="-3" width="7" height="6" rx="2" fill="#ffffff"/>
+        <rect x="-17" y="-17" width="6" height="7" rx="2" fill="#ffffff" transform="rotate(45)"/>
+        <rect x="11" y="-17" width="6" height="7" rx="2" fill="#ffffff" transform="rotate(45)"/>
+        <rect x="-17" y="11" width="6" height="7" rx="2" fill="#ffffff" transform="rotate(45)"/>
+        <rect x="11" y="11" width="6" height="7" rx="2" fill="#ffffff" transform="rotate(45)"/>
+      </g>
+    </g>
+
   </g>
 </svg>

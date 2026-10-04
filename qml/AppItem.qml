@@ -91,6 +91,28 @@ DockItem {
             popupMenu(contextMenu)
     }
 
+    onDoubleClicked: function(mouse) {
+        if (mouse.button === Qt.LeftButton) {
+            if (model.appId === "cutefish-launcher") {
+                appModel.clicked(model.appId)
+            } else if (model.appId === "cutefish-filemanager" || model.appId === "cutefish-terminal" || model.appId === "file-manager" || model.appId === "terminal") {
+                startBounce()
+                appModel.openNewInstance(model.appId)
+            } else if (windowCount === 0) {
+                startBounce()
+                appModel.openNewInstance(model.appId)
+            } else {
+                startBounce()
+                if (!appModel.openNewInstance(model.appId)) {
+                    appModel.raiseWindow(model.appId)
+                }
+            }
+        } else if (mouse.button === Qt.RightButton) {
+            if (model.appId !== "cutefish-launcher")
+                popupMenu(contextMenu)
+        }
+    }
+
     onClicked: function(mouse) {
         if (mouse.button === Qt.LeftButton) {
             if (windowCount === 0 && model.appId !== "cutefish-launcher")
