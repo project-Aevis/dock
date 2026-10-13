@@ -72,7 +72,7 @@ void Activity::onActiveWindowChanged()
             if (i.isMinimized() || i.hasState(NET::SkipTaskbar))
                 continue;
 
-            if (i.hasState(NET::MaxVert) || i.hasState(NET::MaxHoriz)) {
+            if (i.hasState(NET::MaxVert) || i.hasState(NET::MaxHoriz) || i.hasState(NET::FullScreen)) {
                 existsWindowMaximized = true;
                 break;
             }
