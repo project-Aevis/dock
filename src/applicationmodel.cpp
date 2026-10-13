@@ -329,8 +329,8 @@ void ApplicationModel::move(int from, int to)
 
 ApplicationItem *ApplicationModel::findItemByWId(quint64 wid)
 {
-    for (ApplicationItem *item : m_appItems) {
-        for (quint64 winId : item->wids) {
+    for (ApplicationItem *item : std::as_const(m_appItems)) {
+        for (quint64 winId : std::as_const(item->wids)) {
             if (winId == wid)
                 return item;
         }
@@ -341,7 +341,7 @@ ApplicationItem *ApplicationModel::findItemByWId(quint64 wid)
 
 ApplicationItem *ApplicationModel::findItemById(const QString &id)
 {
-    for (ApplicationItem *item : m_appItems) {
+    for (ApplicationItem *item : std::as_const(m_appItems)) {
         if (item->id == id)
             return item;
     }
@@ -351,7 +351,7 @@ ApplicationItem *ApplicationModel::findItemById(const QString &id)
 
 ApplicationItem *ApplicationModel::findItemByDesktop(const QString &desktop)
 {
-    for (ApplicationItem *item : m_appItems) {
+    for (ApplicationItem *item : std::as_const(m_appItems)) {
         if (item->desktopPath == desktop)
             return item;
     }
@@ -371,9 +371,9 @@ bool ApplicationModel::contains(const QString &id)
 
 int ApplicationModel::indexOf(const QString &id)
 {
-    for (ApplicationItem *item : m_appItems) {
-        if (item->id == id)
-            return m_appItems.indexOf(item);
+    for (int i = 0; i < m_appItems.size(); ++i) {
+        if (m_appItems.at(i)->id == id)
+            return i;
     }
 
     return -1;
@@ -385,57 +385,66 @@ void ApplicationModel::initPinnedApplications()
     QSettings systemSettings("/etc/cutefish-dock-list.conf", QSettings::IniFormat);
     QSettings *set = (QFile(settings.fileName()).exists()) ? &settings
                                                            : &systemSettings;
-    QStringList groups = set->childGroups();
+    const QStringList groups = set->childGroups();
 
-    // Pinned Apps
-    for (int i = 0; i < groups.size(); ++i) {
-        for (const QString &id : groups) {
-            set->beginGroup(id);
-            int index = set->value("Index").toInt();
+    struct PinnedEntry {
+        QString id;
+        int index;
+    };
+    QVector<PinnedEntry> entries;
+    entries.reserve(groups.size());
 
-            if (index == i) {
-                beginInsertRows(QModelIndex(), rowCount(), rowCount());
-                ApplicationItem *item = new ApplicationItem;
+    for (const QString &id : groups) {
+        set->beginGroup(id);
+        int index = set->value("Index", 0).toInt();
+        set->endGroup();
+        entries.append({id, index});
+    }
 
-                item->desktopPath = set->value("DesktopPath").toString();
-                item->id = id;
-                item->isPinned = true;
+    std::sort(entries.begin(), entries.end(), [](const PinnedEntry &a, const PinnedEntry &b) {
+        return a.index < b.index;
+    });
 
-                if (!QFile(item->desktopPath).exists()) {
-                    set->endGroup();
-                    continue;
-                }
+    for (const auto &entry : entries) {
+        set->beginGroup(entry.id);
+        const QString desktopPath = set->value("DesktopPath").toString();
 
-                // Read from desktop file.
-                if (!item->desktopPath.isEmpty()) {
-                    QMap<QString, QString> desktopInfo = Utils::instance()->readInfoFromDesktop(item->desktopPath);
-                    item->iconName = desktopInfo.value("Icon");
-                    item->visibleName = desktopInfo.value("Name");
-                    item->exec = desktopInfo.value("Exec");
-                }
-
-                // Read from config file.
-                if (item->iconName.isEmpty())
-                    item->iconName = set->value("Icon").toString();
-
-                if (item->visibleName.isEmpty())
-                    item->visibleName = set->value("VisibleName").toString();
-
-                if (item->exec.isEmpty())
-                    item->exec = set->value("Exec").toString();
-
-                m_appItems.append(item);
-                endInsertRows();
-
-                emit itemAdded();
-                emit countChanged();
-
-                set->endGroup();
-                break;
-            } else {
-                set->endGroup();
-            }
+        if (!QFile::exists(desktopPath)) {
+            set->endGroup();
+            continue;
         }
+
+        beginInsertRows(QModelIndex(), rowCount(), rowCount());
+        ApplicationItem *item = new ApplicationItem;
+        item->desktopPath = desktopPath;
+        item->id = entry.id;
+        item->isPinned = true;
+
+        // Read from desktop file.
+        if (!item->desktopPath.isEmpty()) {
+            QMap<QString, QString> desktopInfo = Utils::instance()->readInfoFromDesktop(item->desktopPath);
+            item->iconName = desktopInfo.value("Icon");
+            item->visibleName = desktopInfo.value("Name");
+            item->exec = desktopInfo.value("Exec");
+        }
+
+        // Read from config file.
+        if (item->iconName.isEmpty())
+            item->iconName = set->value("Icon").toString();
+
+        if (item->visibleName.isEmpty())
+            item->visibleName = set->value("VisibleName").toString();
+
+        if (item->exec.isEmpty())
+            item->exec = set->value("Exec").toString();
+
+        m_appItems.append(item);
+        endInsertRows();
+
+        emit itemAdded();
+        emit countChanged();
+
+        set->endGroup();
     }
 
     // Launcher / Launchpad (Anchored on the right side of pinned apps)
