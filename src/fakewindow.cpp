@@ -103,14 +103,14 @@ void FakeWindow::setContainsMouse(bool contains)
 void FakeWindow::updateGeometry()
 {
     int length = 5;
-    const QRect screenRect = qApp->primaryScreen()->geometry();
+    const QRect screenRect = screen() ? screen()->geometry() : qApp->primaryScreen()->geometry();
     QRect newRect;
 
     switch (DockSettings::self()->direction())
     {
         case DockSettings::Left:
-            newRect = QRect(screenRect.x() - (length * 2),
-                            (screenRect.height() + length) / 2,
+            newRect = QRect(screenRect.x(),
+                            screenRect.y(),
                             length, screenRect.height());
             break;
         case DockSettings::Bottom:
