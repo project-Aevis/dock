@@ -83,31 +83,20 @@ Item {
         anchors.fill: parent
         radius: root.windowRadius
 
-        color: FishUI.Theme.darkMode ? Qt.rgba(0.12, 0.14, 0.20, 0.68)
-                                     : Qt.rgba(0.92, 0.94, 0.98, 0.72)
+        color: FishUI.Theme.darkMode
+               ? Qt.rgba(0.08, 0.08, 0.12, FishUI.Theme.blurEnabled ? 0.68 : 0.98)
+               : Qt.rgba(0.96, 0.96, 0.98, FishUI.Theme.blurEnabled ? 0.72 : 0.98)
 
         border.width: 1 / FishUI.Dpi.ratio
         border.pixelAligned: FishUI.Dpi.ratio > 1 ? false : true
-        border.color: FishUI.Theme.darkMode ? Qt.rgba(1, 1, 1, 0.28)
-                                            : Qt.rgba(1, 1, 1, 0.95)
-
-        // Inner Specular Glass Rim
-        Rectangle {
-            id: innerHighlight
-            anchors.fill: parent
-            anchors.margins: 1 / FishUI.Dpi.ratio
-            radius: Math.max(0, parent.radius - 1)
-            color: "transparent"
-            border.width: 1 / FishUI.Dpi.ratio
-            border.color: FishUI.Theme.darkMode ? Qt.rgba(1, 1, 1, 0.10)
-                                                : Qt.rgba(1, 1, 1, 0.50)
-        }
+        border.color: FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.12)
+                                            : Qt.rgba(0, 0, 0, 0.08)
     }
 
     FishUI.WindowShadow {
         view: dock
-        strength: 0.8
-        radius: _background.radius + 6
+        strength: 0.35
+        radius: _background.radius + 4
     }
 
     FishUI.WindowBlur {
