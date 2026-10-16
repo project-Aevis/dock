@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 CutefishOS Team.
+ * Copyright (C) 2026 Project Aevis Contributors.
  *
  * Author:     rekols <revenmartin@gmail.com>
  *
@@ -24,6 +25,8 @@
 #include <QProcess>
 #include <QDBusInterface>
 #include <QDBusConnection>
+#include <QDir>
+#include <QFile>
 #include <utility>
 
 class PinnedFilterProxyModel : public QSortFilterProxyModel
@@ -181,8 +184,11 @@ bool ApplicationModel::isDesktopPinned(const QString &desktopFile)
 
 void ApplicationModel::clicked(const QString &id)
 {
-    if (id == "cutefish-launcher" || id == "launchpad") {
-        QDBusInterface iface("com.cutefish.Launcher", "/Launcher", "com.cutefish.Launcher", QDBusConnection::sessionBus());
+    if (id == "cutefish-launcher" || id == "aevis-launcher" || id == "launchpad") {
+        const QString service = QDBusInterface("org.aevis.Launcher", "/Launcher", "org.aevis.Launcher", QDBusConnection::sessionBus()).isValid()
+            ? QStringLiteral("org.aevis.Launcher")
+            : QStringLiteral("com.cutefish.Launcher");
+        QDBusInterface iface(service, "/Launcher", service, QDBusConnection::sessionBus());
         iface.call("toggle");
         return;
     }
@@ -307,8 +313,13 @@ void ApplicationModel::updateGeometries(const QString &id, QRect rect)
     if (!item)
         return;
 
-    for (quint64 id : item->wids) {
-        m_iface->setIconGeometry(id, rect);
+    if (item->lastGeometry == rect)
+        return;
+
+    item->lastGeometry = rect;
+
+    for (quint64 wid : item->wids) {
+        m_iface->setIconGeometry(wid, rect);
     }
 }
 
@@ -381,8 +392,13 @@ int ApplicationModel::indexOf(const QString &id)
 
 void ApplicationModel::initPinnedApplications()
 {
-    QSettings settings(QSettings::UserScope, "cutefishos", "dock_pinned");
-    QSettings systemSettings("/etc/cutefish-dock-list.conf", QSettings::IniFormat);
+    const QString aevisPinned = QDir::home().filePath(QStringLiteral(".config/aevis/dock_pinned.conf"));
+    const QString cutefishPinned = QDir::home().filePath(QStringLiteral(".config/cutefishos/dock_pinned.conf"));
+    QSettings settings(QFile::exists(aevisPinned) ? aevisPinned : (QFile::exists(cutefishPinned) ? cutefishPinned : aevisPinned), QSettings::IniFormat);
+    const QString systemConf = QFile::exists(QStringLiteral("/etc/aevis-dock-list.conf"))
+        ? QStringLiteral("/etc/aevis-dock-list.conf")
+        : QStringLiteral("/etc/cutefish-dock-list.conf");
+    QSettings systemSettings(systemConf, QSettings::IniFormat);
     QSettings *set = (QFile(settings.fileName()).exists()) ? &settings
                                                            : &systemSettings;
     const QStringList groups = set->childGroups();
@@ -407,7 +423,19 @@ void ApplicationModel::initPinnedApplications()
 
     for (const auto &entry : entries) {
         set->beginGroup(entry.id);
-        const QString desktopPath = set->value("DesktopPath").toString();
+        QString desktopPath = set->value("DesktopPath").toString();
+
+        if (!QFile::exists(desktopPath)) {
+            if (desktopPath.contains(QStringLiteral("cutefish-"))) {
+                QString alt = desktopPath;
+                alt.replace(QStringLiteral("cutefish-"), QStringLiteral("aevis-"));
+                if (QFile::exists(alt)) desktopPath = alt;
+            } else if (desktopPath.contains(QStringLiteral("aevis-"))) {
+                QString alt = desktopPath;
+                alt.replace(QStringLiteral("aevis-"), QStringLiteral("cutefish-"));
+                if (QFile::exists(alt)) desktopPath = alt;
+            }
+        }
 
         if (!QFile::exists(desktopPath)) {
             set->endGroup();
@@ -450,8 +478,11 @@ void ApplicationModel::initPinnedApplications()
     // Launcher / Launchpad (Anchored on the right side of pinned apps)
     beginInsertRows(QModelIndex(), m_appItems.count(), m_appItems.count());
     ApplicationItem *item = new ApplicationItem;
-    item->id = "cutefish-launcher";
-    item->exec = "cutefish-launcher";
+    const QString launcherExec = QStandardPaths::findExecutable(QStringLiteral("aevis-launcher")).isEmpty()
+        ? QStringLiteral("cutefish-launcher")
+        : QStringLiteral("aevis-launcher");
+    item->id = launcherExec;
+    item->exec = launcherExec;
     item->iconName = "qrc:/images/launchpad.svg";
     item->visibleName = tr("Launchpad");
     item->isPinned = true;
@@ -462,8 +493,12 @@ void ApplicationModel::initPinnedApplications()
 
 void ApplicationModel::savePinAndUnPinList()
 {
-    QSettings settings(QSettings::UserScope, "cutefishos", "dock_pinned");
+    const QString aevisDir = QDir::home().filePath(QStringLiteral(".config/aevis"));
+    QDir().mkpath(aevisDir);
+    QSettings settings(aevisDir + QStringLiteral("/dock_pinned.conf"), QSettings::IniFormat);
     settings.clear();
+    QSettings legacySettings(QSettings::UserScope, "cutefishos", "dock_pinned");
+    legacySettings.clear();
 
     int index = 0;
 
@@ -501,7 +536,7 @@ void ApplicationModel::onWindowAdded(quint64 wid)
     const QString id = info.value("id").toString();
 
     // Skip...
-    if (id == "cutefish-launcher")
+    if (id == "cutefish-launcher" || id == "aevis-launcher")
         return;
 
     QString desktopPath = m_iface->desktopFilePath(wid);
@@ -550,6 +585,8 @@ void ApplicationModel::onWindowAdded(quint64 wid)
         }
 
         int launcherIndex = indexOf(QLatin1String("cutefish-launcher"));
+        if (launcherIndex == -1)
+            launcherIndex = indexOf(QLatin1String("aevis-launcher"));
         int insertPos = (launcherIndex != -1) ? launcherIndex : rowCount();
         m_appItems.insert(insertPos, item);
         endInsertRows();

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 CutefishOS Team.
+ * Copyright (C) 2026 Project Aevis Contributors.
  *
  * Author:     rekols <revenmartin@gmail.com>
  *
@@ -87,15 +88,17 @@ DockItem {
     }
 
     onRightClicked: {
-        if (model.appId !== "cutefish-launcher")
+        if (model.appId !== "cutefish-launcher" && model.appId !== "aevis-launcher")
             popupMenu(contextMenu)
     }
 
     onDoubleClicked: function(mouse) {
         if (mouse.button === Qt.LeftButton) {
-            if (model.appId === "cutefish-launcher") {
+            if (model.appId === "cutefish-launcher" || model.appId === "aevis-launcher") {
                 appModel.clicked(model.appId)
-            } else if (model.appId === "cutefish-filemanager" || model.appId === "cutefish-terminal" || model.appId === "file-manager" || model.appId === "terminal") {
+            } else if (model.appId === "cutefish-filemanager" || model.appId === "aevis-filemanager" ||
+                       model.appId === "cutefish-terminal" || model.appId === "aevis-terminal" ||
+                       model.appId === "file-manager" || model.appId === "terminal") {
                 startBounce()
                 appModel.openNewInstance(model.appId)
             } else if (windowCount === 0) {
@@ -108,18 +111,18 @@ DockItem {
                 }
             }
         } else if (mouse.button === Qt.RightButton) {
-            if (model.appId !== "cutefish-launcher")
+            if (model.appId !== "cutefish-launcher" && model.appId !== "aevis-launcher")
                 popupMenu(contextMenu)
         }
     }
 
     onClicked: function(mouse) {
         if (mouse.button === Qt.LeftButton) {
-            if (windowCount === 0 && model.appId !== "cutefish-launcher")
+            if (windowCount === 0 && model.appId !== "cutefish-launcher" && model.appId !== "aevis-launcher")
                 startBounce()
             appModel.clicked(model.appId)
         } else if (mouse.button === Qt.MiddleButton) {
-            if (model.appId !== "cutefish-launcher") {
+            if (model.appId !== "cutefish-launcher" && model.appId !== "aevis-launcher") {
                 startBounce()
                 appModel.openNewInstance(model.appId)
             }

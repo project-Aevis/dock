@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 CutefishOS Team.
+ * Copyright (C) 2026 Project Aevis Contributors.
  *
  * Author:     rekols <revenmartin@gmail.com>
  *
@@ -127,6 +128,16 @@ bool XWindowInterface::isAcceptableWindow(quint64 wid)
 
     if (info.hasState(NET::SkipTaskbar) || info.hasState(NET::SkipPager))
         return false;
+
+    const QString cls = info.windowClassClass().toLower();
+    const QString name = info.windowClassName().toLower();
+    if (cls.contains(QLatin1String("aevis-shell")) || cls.contains(QLatin1String("cutefish-shell"))
+        || cls.contains(QLatin1String("aevis-dock")) || cls.contains(QLatin1String("cutefish-dock"))
+        || cls.contains(QLatin1String("aevis-statusbar")) || cls.contains(QLatin1String("cutefish-statusbar"))
+        || cls.contains(QLatin1String("aevis-launcher")) || cls.contains(QLatin1String("cutefish-launcher"))
+        || name.contains(QLatin1String("aevis-shell")) || name.contains(QLatin1String("cutefish-shell"))) {
+        return false;
+    }
 
     // WM_TRANSIENT_FOR hint not set - normal window
     WId transFor = info.transientFor();

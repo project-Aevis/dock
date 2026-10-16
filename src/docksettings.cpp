@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 CutefishOS Team.
+ * Copyright (C) 2026 Project Aevis Contributors.
  *
  * Author:     rekols <revenmartin@gmail.com>
  *
@@ -24,6 +25,7 @@
 #include <QDBusInterface>
 
 #include <QFile>
+#include <QDir>
 #include <QDebug>
 
 static DockSettings *SELF = nullptr;
@@ -43,7 +45,10 @@ DockSettings::DockSettings(QObject *parent)
     , m_roundedWindowEnabled(true)
     , m_direction(Left)
     , m_visibility(AlwaysShow)
-    , m_settings(new QSettings(QSettings::UserScope, "cutefishos", "dock"))
+    , m_settings(new QSettings(QSettings::UserScope,
+                               QFile::exists(QDir::homePath() + QStringLiteral("/.config/aevis/dock.conf"))
+                                   ? QStringLiteral("aevis") : QStringLiteral("cutefishos"),
+                               QStringLiteral("dock")))
 {
     if (!m_settings->contains("IconSize"))
         m_settings->setValue("IconSize", 60);

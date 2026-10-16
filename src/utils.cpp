@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 CutefishOS Team.
+ * Copyright (C) 2026 Project Aevis Contributors.
  *
  * Author:     rekols <revenmartin@gmail.com>
  *
@@ -160,13 +161,22 @@ QString Utils::desktopPathFromMetadata(const QString &appId, quint32 pid, const 
 
 QMap<QString, QString> Utils::readInfoFromDesktop(const QString &desktopFile)
 {
+    if (m_desktopInfoCache.contains(desktopFile)) {
+        return m_desktopInfoCache.value(desktopFile);
+    }
+
     QMap<QString, QString> info;
     for (SystemAppItem *item : m_sysAppMonitor->applications()) {
         if (item->path == desktopFile) {
             info.insert("Icon", item->iconName);
             info.insert("Name", item->name);
             info.insert("Exec", item->exec);
+            break;
         }
+    }
+
+    if (!info.isEmpty()) {
+        m_desktopInfoCache.insert(desktopFile, info);
     }
 
     return info;

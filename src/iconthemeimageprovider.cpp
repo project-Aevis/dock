@@ -48,10 +48,14 @@ QPixmap IconThemeImageProvider::requestPixmap(const QString &id, QSize *realSize
         QIcon icon = QIcon::fromTheme(id);
         if (icon.isNull()) {
             const QString cur = QIcon::themeName();
-            if (cur != QLatin1String("Cutefish")) {
-                QIcon::setThemeName(QLatin1String("Cutefish"));
-                icon = QIcon::fromTheme(id);
-                QIcon::setThemeName(cur);
+            for (const QString &fallbackTheme : { QStringLiteral("Aevis"), QStringLiteral("Cutefish") }) {
+                if (cur != fallbackTheme) {
+                    QIcon::setThemeName(fallbackTheme);
+                    icon = QIcon::fromTheme(id);
+                    QIcon::setThemeName(cur);
+                    if (!icon.isNull())
+                        break;
+                }
             }
         }
         if (icon.isNull())

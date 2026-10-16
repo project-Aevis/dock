@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 CutefishOS Team.
+ * Copyright (C) 2026 Project Aevis Contributors.
  *
  * Author:     rekols <revenmartin@gmail.com>
  *
@@ -54,7 +55,7 @@ Item {
     property bool isHovered: false
     property real maxMagnification: 1.40
     property real magnificationSpread: root.itemSize * 2.3
-    property int dividerSlotWidth: 14
+    property int dividerSlotWidth: 18
 
     ScreenHelper {
         id: _screenHelper
@@ -198,6 +199,10 @@ Item {
             implicitWidth: root.isHorizontal ? root.dividerSlotWidth : root.itemSize
             implicitHeight: root.isHorizontal ? root.itemSize : root.dividerSlotWidth
             Layout.alignment: Qt.AlignCenter
+            Layout.leftMargin: root.isHorizontal ? 6 : 0
+            Layout.rightMargin: root.isHorizontal ? 6 : 0
+            Layout.topMargin: !root.isHorizontal ? 6 : 0
+            Layout.bottomMargin: !root.isHorizontal ? 6 : 0
 
             Rectangle {
                 anchors.centerIn: parent

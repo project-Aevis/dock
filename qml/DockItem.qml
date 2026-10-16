@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 CutefishOS Team.
+ * Copyright (C) 2026 Project Aevis Contributors.
  *
  * Author:     rekols <revenmartin@gmail.com>
  *
@@ -43,7 +44,10 @@ Item {
 
     property bool enableActivateDot: true
     property bool isActive: false
+    property int windowCount: 0
+    property int unreadCount: 0
 
+    property string appId: ""
     property var popupText
 
     property double iconSizeRatio: 0.82
@@ -74,8 +78,8 @@ Item {
 
     Behavior on currentScale {
         NumberAnimation {
-            duration: root.isHovered ? 80 : 220
-            easing.type: root.isHovered ? Easing.OutQuint : Easing.OutBack
+            duration: root.isHovered ? 45 : 180
+            easing.type: root.isHovered ? Easing.OutCubic : Easing.OutBack
         }
     }
 
@@ -87,12 +91,11 @@ Item {
     z: Math.round(control.currentScale * 100)
 
     // Tactile click compression
-    // Tactile click compression
     property real clickScale: iconArea.pressed && !mouseArea.drag.active ? 0.92 : 1.0
     Behavior on clickScale {
         NumberAnimation {
-            duration: 120
-            easing.type: Easing.OutBack
+            duration: 90
+            easing.type: Easing.OutQuad
         }
     }
 
@@ -151,8 +154,8 @@ Item {
     signal pressed(var mouse)
     signal pressAndHold(var mouse)
     signal clicked(var mouse)
-    signal rightClicked(var mouse)
     signal doubleClicked(var mouse)
+    signal rightClicked(var mouse)
     signal dropped(var drop)
 
     function updatePopupTipsPosition() {
@@ -170,6 +173,30 @@ Item {
         else
             popupTips.position = Qt.point(controlPosition.x + (control.width / 2 - popupTips.width / 2),
                                           root.mapToGlobal(0, 0).y - popupTips.height - FishUI.Units.smallSpacing - magOffset)
+    }
+
+    function updateWindowPreviewPosition() {
+        if (typeof windowPreviewPopup === "undefined" || !windowPreviewPopup)
+            return
+
+        var controlPosition = control.mapToGlobal(0, 0)
+        var magOffset = control.currentScale > 1.0 ? control.iconSize * (control.currentScale - 1.0) * 0.45 : 0
+        var targetX = 0
+        var targetY = 0
+
+        if (Settings.direction === DockSettings.Left) {
+            targetX = root.mapToGlobal(root.width, 0).x + FishUI.Units.largeSpacing + 4 + magOffset
+            targetY = controlPosition.y + (control.height / 2 - windowPreviewPopup.height / 2)
+        } else if (Settings.direction === DockSettings.Right) {
+            targetX = root.mapToGlobal(0, 0).x - windowPreviewPopup.width - FishUI.Units.largeSpacing - 4 - magOffset
+            targetY = controlPosition.y + (control.height / 2 - windowPreviewPopup.height / 2)
+        } else {
+            targetX = controlPosition.x + (control.width / 2 - windowPreviewPopup.width / 2)
+            targetY = root.mapToGlobal(0, 0).y - windowPreviewPopup.height - FishUI.Units.largeSpacing - 4 - magOffset
+        }
+
+        windowPreviewPopup.popupPosition = Qt.point(targetX, targetY)
+        windowPreviewPopup.adjustCorrectLocation()
     }
 
     function popupMenu(menu) {
@@ -252,17 +279,6 @@ Item {
         smooth: true
         antialiasing: true
 
-        // HarmonyOS Continuous Squircle Mask to guarantee zero sharp corners across all app icons
-        layer.enabled: true
-        layer.smooth: true
-        layer.effect: OpacityMask {
-            maskSource: Rectangle {
-                width: icon.width
-                height: icon.height
-                radius: icon.width * 0.22
-            }
-        }
-
         function updateIcon() {
             var s = icon.source
             icon.source = ""
@@ -313,9 +329,13 @@ Item {
                 control.clicked(mouse)
         }
 
+        onDoubleClicked: function(mouse) { control.doubleClicked(mouse) }
+
         onPressed: function(mouse) {
             control.pressed(mouse)
             popupTips.hide()
+            if (typeof windowPreviewPopup !== "undefined" && windowPreviewPopup)
+                windowPreviewPopup.hide()
         }
 
         onPositionChanged: function(mouse) {
@@ -323,6 +343,7 @@ Item {
             root.hoverPos = root.isHorizontal ? p.x : p.y
             root.isHovered = true
             hoverResetTimer.restart()
+            dock.setMouseOverDock(true)
 
             if (pressed) {
                 if (control.draggable && mouse.source !== Qt.MouseEventSynthesizedByQt) {
@@ -345,12 +366,24 @@ Item {
         }
 
         onContainsMouseChanged: {
-            if (containsMouse && control.popupText !== "") {
-                popupTips.popupText = control.popupText
-                popupPositionTimer.restart()
+            if (containsMouse) {
+                if (control.windowCount > 0 && control.appId) {
+                    if (root.showWindowPreview(control.appId, control.popupText, control)) {
+                        return
+                    }
+                }
+                if (control.popupText !== "") {
+                    if (typeof windowPreviewPopup !== "undefined" && windowPreviewPopup)
+                        windowPreviewPopup.hide()
+                    popupTips.popupText = control.popupText
+                    popupPositionTimer.restart()
+                }
             } else {
                 popupPositionTimer.stop()
                 popupTips.hide()
+                if (control.appId) {
+                    root.scheduleHideWindowPreview(control.appId)
+                }
             }
         }
     }
@@ -371,53 +404,98 @@ Item {
         }
     }
 
-    // macOS Style Pearl Indicator Dot
+    // Unread Notification / Multi-Window Badge (Top-Right of Icon)
+    Rectangle {
+        id: countBadge
+        z: 10
+        anchors.top: icon.top
+        anchors.topMargin: -2
+        anchors.right: icon.right
+        anchors.rightMargin: -2
+        width: Math.max(18, countText.implicitWidth + 8)
+        height: 18
+        radius: 9
+        color: control.unreadCount > 0 ? "#FF3B30" : "#007AFF"
+        border.width: 1.5
+        border.color: FishUI.Theme.darkMode ? "#1C1C1E" : "#FFFFFF"
+        antialiasing: true
+        visible: (control.unreadCount > 0 || (control.windowCount > 1 && control.unreadCount > 0)) && !dragStarted
+
+        scale: visible ? 1.0 : 0.0
+        Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutBack } }
+
+        Text {
+            id: countText
+            anchors.centerIn: parent
+            text: control.unreadCount > 0 ? (control.unreadCount > 99 ? "99+" : control.unreadCount)
+                                          : (control.windowCount > 99 ? "99+" : control.windowCount)
+            font.bold: true
+            font.pixelSize: 10
+            renderType: Text.NativeRendering
+            color: "#FFFFFF"
+        }
+    }
+
+    // macOS / Modern Capsule Pearl Indicator Dot
     Item {
         id: activeDotContainer
+        z: 100
 
-        property var leftX: -(root.activeDotGap + width)
-        property var leftY: (parent.height - height) / 2
+        readonly property real baseDotSize: (typeof root !== "undefined" && root.activeDotSize) ? Math.max(5, root.activeDotSize) : 5
+        readonly property bool isMultiWindow: control.windowCount > 1
 
-        property var bottomX: (parent.width - width) / 2
-        property var bottomY: parent.height + root.activeDotGap
+        width: (isMultiWindow && isBottom) ? (baseDotSize * 2.3) : baseDotSize
+        height: (isMultiWindow && !isBottom) ? (baseDotSize * 2.3) : baseDotSize
 
-        property var rightX: parent.width + root.activeDotGap
-        property var rightY: (parent.height - height) / 2
+        Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+        Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
 
-        property var circleSize: root.activeDotSize
+        anchors.horizontalCenter: isBottom ? icon.horizontalCenter : undefined
+        anchors.top: isBottom ? icon.bottom : undefined
+        anchors.topMargin: isBottom ? 3 : 0
 
-        width: circleSize
-        height: circleSize
+        anchors.verticalCenter: !isBottom ? icon.verticalCenter : undefined
+        anchors.right: isLeft ? icon.left : undefined
+        anchors.rightMargin: isLeft ? 3 : 0
+        anchors.left: isRight ? icon.right : undefined
+        anchors.leftMargin: isRight ? 3 : 0
 
-        x: isLeft ? leftX : isBottom ? bottomX : rightX
-        y: isLeft ? leftY : isBottom ? bottomY : rightY
+        visible: (enableActivateDot || control.windowCount > 0) && !dragStarted
 
-        visible: enableActivateDot && !dragStarted
-
-        opacity: enableActivateDot ? 1.0 : 0.0
-        scale: enableActivateDot ? 1.0 : 0.0
+        opacity: (enableActivateDot || control.windowCount > 0) ? 1.0 : 0.0
+        scale: (enableActivateDot || control.windowCount > 0) ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 180 } }
         Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
 
         // Glow halo for frontmost active app
         Rectangle {
             anchors.centerIn: parent
-            width: parent.width * 2.8
-            height: parent.height * 2.8
-            radius: width / 2
-            color: Qt.rgba(0, 122, 255, 0.35)
+            width: parent.width + 8
+            height: parent.height + 8
+            radius: Math.min(width, height) / 2
+            color: FishUI.Theme.darkMode ? Qt.rgba(1, 1, 1, 0.30)
+                                         : Qt.rgba(0, 0, 0, 0.20)
             visible: control.isActive
             Behavior on visible { PropertyAnimation { duration: 200 } }
         }
 
-        // Crisp circular LED dot
+        // Crisp capsule / circular pearl dot with subtle contrast rim
         Rectangle {
             id: activeDot
             anchors.fill: parent
-            radius: width / 2
-            color: control.isActive ? "#007AFF"
-                                    : (FishUI.Theme.darkMode ? Qt.rgba(255, 255, 255, 0.70)
-                                                             : Qt.rgba(0, 122, 255, 0.65))
+            radius: Math.min(width, height) / 2
+            border.width: 0.5
+            border.color: FishUI.Theme.darkMode ? Qt.rgba(0, 0, 0, 0.35)
+                                                : Qt.rgba(255, 255, 255, 0.7)
+            color: {
+                if (control.isActive) {
+                    return FishUI.Theme.darkMode ? "#FFFFFF"
+                                                 : "#1C1C1E"
+                } else {
+                    return FishUI.Theme.darkMode ? Qt.rgba(1, 1, 1, 0.85)
+                                                 : Qt.rgba(0, 0, 0, 0.65)
+                }
+            }
 
             Behavior on color {
                 ColorAnimation { duration: 180 }

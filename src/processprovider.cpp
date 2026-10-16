@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 CutefishOS Team.
+ * Copyright (C) 2026 Project Aevis Contributors.
  *
  * Author:     rekols <revenmartin@gmail.com>
  *
@@ -23,15 +24,23 @@
 ProcessProvider::ProcessProvider(QObject *parent)
     : QObject(parent)
 {
-
 }
 
 bool ProcessProvider::startDetached(const QString &exec, QStringList args)
 {
+    QString aevisExec = exec;
+    if (aevisExec.startsWith(QStringLiteral("cutefish-"))) {
+        aevisExec.replace(0, 9, QStringLiteral("aevis-"));
+        if (QProcess::startDetached(aevisExec, args))
+            return true;
+    }
+
     if (QProcess::startDetached(exec, args))
         return true;
 
-    if (exec == QStringLiteral("cutefish-settings")) {
+    if (exec == QStringLiteral("cutefish-settings") || aevisExec == QStringLiteral("aevis-settings")) {
+        if (QProcess::startDetached(QStringLiteral("/usr/bin/aevis-settings"), args))
+            return true;
         if (QProcess::startDetached(QStringLiteral("/usr/bin/cutefish-settings"), args))
             return true;
     }

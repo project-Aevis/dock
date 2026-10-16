@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2021 CutefishOS Team.
+ * Copyright (C) 2026 Project Aevis Contributors.
  *
  * Author:     rekols <revenmartin@gmail.com>
  *
@@ -23,6 +24,8 @@
 #include <QObject>
 #include <QIcon>
 #include <QUrl>
+#include <QHash>
+#include <QMap>
 
 class SystemAppMonitor;
 class Utils : public QObject
@@ -56,6 +59,7 @@ public:
 
 private:
     SystemAppMonitor *m_sysAppMonitor;
+    QHash<QString, QMap<QString, QString>> m_desktopInfoCache;
 };
 
 #endif // UTILS_H
